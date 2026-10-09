@@ -69,7 +69,7 @@ public sealed partial class TelemetryPublisherNode : Node3D
     {
         // never run in the editor process (a scene-open instance must not
         // construct sockets or send — guard even if someone re-adds [Tool])
-        if (Engine.IsEditorHint) return;
+        if (Engine.IsEditorHint()) return;
 
         if (!string.IsNullOrEmpty(ObjectName))
             Publisher.DeclareObject(ObjectName, TypeLabel);
@@ -85,9 +85,10 @@ public sealed partial class TelemetryPublisherNode : Node3D
 
     public override void _Process(double delta)
     {
-        if (Engine.IsEditorHint || _publisher == null)
+        var pub = _publisher;
+        if (pub == null || Engine.IsEditorHint())
             return;
-        _publisher.Tick(Time.GetTicksMsec() / 1000.0);
+        pub.Tick(Time.GetTicksMsec() / 1000.0);
     }
 
     public override void _ExitTree()
