@@ -18,7 +18,6 @@ namespace Ogsa.Telemetry.Godot;
 /// lands facing −X in both frames) and self-inverse. Vectors (velocity,
 /// direction, force) convert like position.
 /// </summary>
-[Tool]
 public sealed partial class TelemetryPublisherNode : Node3D
 {
     [ExportGroup("Transport")]
@@ -68,6 +67,10 @@ public sealed partial class TelemetryPublisherNode : Node3D
 
     public override void _Ready()
     {
+        // never run in the editor process (a scene-open instance must not
+        // construct sockets or send — guard even if someone re-adds [Tool])
+        if (Engine.IsEditorHint) return;
+
         if (!string.IsNullOrEmpty(ObjectName))
             Publisher.DeclareObject(ObjectName, TypeLabel);
 
@@ -82,8 +85,9 @@ public sealed partial class TelemetryPublisherNode : Node3D
 
     public override void _Process(double delta)
     {
-        if (_publisher != null)
-            _publisher.Tick(Time.GetTicksMsec() / 1000.0);
+        if (Engine.IsEditorHint || _publisher == null)
+            return;
+        _publisher.Tick(Time.GetTicksMsec() / 1000.0);
     }
 
     public override void _ExitTree()
