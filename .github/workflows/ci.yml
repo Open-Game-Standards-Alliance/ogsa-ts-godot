@@ -1,0 +1,49 @@
+name: ci
+# Verifies the addon end to end via the in-repo testproject: sync the
+# addon in, build the C#, run the conformance scene headless — exit 0
+# means 12/12 (5 frame conversion + manifest + 6 corpus checks).
+# windows runner: sync-addon.ps1 uses robocopy; corpus found via the
+# standard repo checked out as a sibling (ancestor walk).
+on: [push, pull_request]
+
+env:
+  ORG: Open-Game-Standards-Alliance
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  conformance:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.ORG }}/OGSA-Telemetry-Standard
+          path: OGSA-Telemetry-Standard
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Cache Godot editor
+        id: godot-cache
+        uses: actions/cache@v4
+        with:
+          path: godot-editor
+          key: godot-${{ env.GODOT_VERSION }}-mono-win64
+
+      - name: Download Godot (mono)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        run: |
+          curl.exe -L -o godot.zip "https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_win64.zip"
+          Expand-Archive godot.zip -DestinationPath godot-editor
+
+      - name: Sync addon into testproject
+        run: ./sync-addon.ps1 -Project ./testproject
+
+      - name: Build C# solution
+        run: dotnet build testproject/ogsa-ts-godot-testproject.csproj --nologo
+
+      - name: Run conformance scene headless
+        run: |
+          $exe = (Get-ChildItem godot-editor -Filter *_console.exe -Recurse | Select-Object -First 1).FullName
+          & $exe --headless --path testproject
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
