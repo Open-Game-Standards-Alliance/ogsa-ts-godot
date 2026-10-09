@@ -1,0 +1,5 @@
+.godot/
+*.csproj
+*.sln
+.idea/
+.DS_Store
