@@ -7,11 +7,6 @@ namespace Ogsa.Telemetry.Godot.Demo;
 /// channels. Pair with ogsa-ts-dotnet's TelemetryReceive.</summary>
 public sealed partial class DemoVehicle : Node3D
 {
-    TelemetryPublisherNode? _telemetry;
-    Ogsa.Telemetry.ChannelHandle? _rpm;
-    Ogsa.Telemetry.ChannelHandle? _speed;
-    Ogsa.Telemetry.ChannelHandle? _headlights;
-
     double _t;
     const float Radius = 10f;
     const float AngularSpeed = 0.8f; // rad/s
@@ -19,26 +14,28 @@ public sealed partial class DemoVehicle : Node3D
 
     public override void _Ready()
     {
-        _telemetry = GetNode<TelemetryPublisherNode>("%TelemetryPublisher");
-        _rpm = _telemetry.DeclareChannel(
+        // locals throughout: handles are only used while wiring, and this
+        // keeps the file free of nullable-field warnings (CS8602/8604)
+        var telemetry = GetNode<TelemetryPublisherNode>("%TelemetryPublisher");
+        var rpm = telemetry.DeclareChannel(
             "engine.rpm", Ogsa.Telemetry.Unit.Rpm, "Demo engine speed", 0, 9000);
-        _speed = _telemetry.DeclareChannel(
+        var speed = telemetry.DeclareChannel(
             "vehicle.speed", Ogsa.Telemetry.Unit.MetrePerSecond,
             "Speed over ground", 0, 30);
-        _headlights = _telemetry.DeclareBooleanChannel(
+        var headlights = telemetry.DeclareBooleanChannel(
             "lights.headlights", "Headlights on/off");
 
-        _telemetry.BindChannelRaw(_rpm, () =>
+        telemetry.BindChannelRaw(rpm, () =>
             MaxRpm * (0.5 + 0.5 * Mathf.Sin((float)_t * 2f)));
         // game-native units — the publisher converts on the wire: speed is
         // measured in km/h here (ω·r in m/s × 3.6), declared m/s.
-        _telemetry.BindChannel(_speed, () => AngularSpeed * Radius * 3.6,
+        telemetry.BindChannel(speed, () => AngularSpeed * Radius * 3.6,
             Ogsa.Telemetry.Unit.KilometrePerHour);
-        _telemetry.BindBooleanChannel(_headlights, () => true);
+        telemetry.BindBooleanChannel(headlights, () => true);
 
         // pose via manual binding (no physics body needed in the demo);
         // the node converts Godot RH/-Z to OGSA-TS LH/+Z inside BindPose.
-        _telemetry.BindPose(
+        telemetry.BindPose(
             () => GlobalPosition,
             () => GlobalTransform.Basis.GetRotationQuaternion());
     }
