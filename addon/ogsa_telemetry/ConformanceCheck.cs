@@ -77,10 +77,13 @@ public sealed partial class ConformanceCheck : Node
 
     void CorpusChecks()
     {
-        var dir = CorpusDir;
-        if (!Directory.Exists(dir))
+        var dir = FindCorpusDir();
+        if (dir is null)
         {
-            GD.Print($"conformance: corpus not found at {Path.GetFullPath(dir)} — set CorpusDir");
+            GD.Print($"conformance: corpus not found (tried '{CorpusDir}', " +
+                $"OGSA_TS_CONFORMANCE env var, sibling of the project, and " +
+                $"parents of the project root) — set CorpusDir in the Inspector " +
+                $"to the standard repo's conformance/ folder");
             _fail++;
             return;
         }
@@ -123,6 +126,35 @@ public sealed partial class ConformanceCheck : Node
 
     // Per-vector semantics mirroring ogsa-ts-dotnet's ConformanceVectorTests
     // (manifest-declared values; floats are float32-exact, so == is exact).
+
+    /// <summary>Corpus location order: explicit CorpusDir (Inspector),
+    /// OGSA_TS_CONFORMANCE env var, sibling of the game project, then
+    /// walking up from the project root (covers projects nested anywhere
+    /// inside the alliance checkout).</summary>
+    string? FindCorpusDir()
+    {
+        if (Directory.Exists(CorpusDir)) return CorpusDir;
+        var env = Environment.GetEnvironmentVariable("OGSA_TS_CONFORMANCE");
+        if (!string.IsNullOrEmpty(env) && Directory.Exists(env)) return env;
+
+        string? dir = ProjectSettings.GlobalizePath("res://");
+        while (!string.IsNullOrEmpty(dir))
+        {
+            var sibling = Path.Combine(
+                Path.GetDirectoryName(dir.TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) ?? "",
+                "OGSA-Telemetry-Standard", "conformance");
+            if (File.Exists(Path.Combine(sibling, "manifest.json"))) return sibling;
+            var nested = Path.Combine(dir, "OGSA-Telemetry-Standard", "conformance");
+            if (File.Exists(Path.Combine(nested, "manifest.json"))) return nested;
+
+            var parent = Path.GetDirectoryName(dir.TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (string.IsNullOrEmpty(parent) || parent == dir) break;
+            dir = parent;
+        }
+        return null;
+    }
 
     static bool CheckDiscovery(string id, CapnpGen.DiscoveryFrame.READER d) => id switch
     {

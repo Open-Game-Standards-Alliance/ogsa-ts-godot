@@ -56,8 +56,14 @@ conversion is also exposed as `TelemetryPublisherNode.ToStandard` /
 
 ## Conformance check
 
-Open `addons/ogsa_telemetry/ConformanceScene.tscn`, point its exported
-`CorpusDir` at `../OGSA-Telemetry-Standard/conformance`, press **F6**.
+Open `addons/ogsa_telemetry/ConformanceScene.tscn` and press **F6**. The
+checker locates the corpus automatically: exported `CorpusDir` if it
+exists, else the `OGSA_TS_CONFORMANCE` env var, else a sibling
+`OGSA-Telemetry-Standard/` of the project, else any ancestor (covers
+projects nested in the alliance checkout). Every golden vector is
+verified against its manifest-declared semantics — names, units,
+ranges, positions, orientations, channel values — plus five
+hand-derived frame-conversion checks (RH/−Z → LH/+Z).
 It validates the vendored core against the golden datagrams and the
 frame-conversion math against hand-derived vectors; non-zero exit on
 failure. Run this after every core sync.
@@ -75,6 +81,7 @@ rpm/speed/headlights channels. Press **F5/F6** with
 | `addon/ogsa_telemetry/TelemetryPublisherNode.cs` | Godot-facing wrapper: exported config, RH→LH frame conversion, auto-bind |
 | `addon/ogsa_telemetry/Core/` | Vendored `Ogsa.Telemetry` core + generated bindings (`sync-core.sh` refreshes from `../ogsa-ts-dotnet`) |
 | `addon/ogsa_telemetry/ConformanceCheck.cs` | Corpus + frame-conversion validator |
+| `sync-addon.ps1` | Mirror the addon into a Godot project (`-Project <path>`) |
 | `addon/ogsa_telemetry/demo/` | Demo vehicle + scene |
 
 ## Vendored core discipline

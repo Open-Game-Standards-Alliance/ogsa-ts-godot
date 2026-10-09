@@ -11,5 +11,8 @@
 - The frame conversion (RH/−Z → LH/+Z: negate Z; quaternion
   (x,y,−z,−w)) lives in TelemetryPublisherNode and must stay covered by
   ConformanceCheck's hand-derived vectors — run it after every core sync.
+- Godot test projects consume a *copy* under <project>/addons/ogsa_telemetry —
+  after changing the addon run ./sync-addon.ps1 -Project <path> so the copy
+  never drifts (preserves Godot-generated .uid sidecars).
 - Product docs describe current state only; history lives in the
   Open-Game-Standards-Alliance knowledge base (knowledge/README.md bridge).
