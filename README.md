@@ -83,3 +83,35 @@ Same as ogsa-ts-unity: core source is copied from ogsa-ts-dotnet (single
 source of truth; its multi-target build + 33-test suite are the gate).
 After pulling upstream: `./sync-core.sh`. Unlike Unity, Godot needs no
 vendored DLLs — NuGet handles Capnp.Net.Runtime in the game csproj.
+
+## Wiring your game's values
+
+Declare channels once in `_Ready` (they lock at the first tick), bind
+getters to your node's state, and fire events from signals. Pose:
+`AutoBindBody` for physics bodies, or manual `BindPose`.
+
+```csharp
+public partial class Vehicle : RigidBody3D
+{
+    [Export] public float SpeedKmh, EngineRpm;
+
+    TelemetryPublisherNode _telemetry = null!;
+
+    public override void _Ready()
+    {
+        _telemetry = GetNode<TelemetryPublisherNode>("../TelemetryPublisher");
+        var rpm   = _telemetry.DeclareChannel("engine.rpm", Unit.Rpm, min: 0, max: 9000);
+        var speed = _telemetry.DeclareChannel("vehicle.speed", Unit.MetrePerSecond);
+
+        _telemetry.BindChannelRaw(rpm, () => EngineRpm);
+        _telemetry.BindChannel(speed, () => SpeedKmh, Unit.KilometrePerHour);
+
+        // events from gameplay signals (direction converts RH -> LH for you)
+        BodyEntered += body =>
+            _telemetry.FireEvent("body.impact", 0.8f, 0.25f, -LinearVelocity.Normalized());
+    }
+}
+```
+
+Pull bindings are sampled at the publisher's rate — no per-frame calls
+needed. `SetChannel` exists for push-model timing control.
