@@ -3,3 +3,6 @@
 *.sln
 .idea/
 .DS_Store
+
+# the testproject csproj is source (committed on purpose); other csproj are generated
+!testproject/ogsa-ts-godot-testproject.csproj
