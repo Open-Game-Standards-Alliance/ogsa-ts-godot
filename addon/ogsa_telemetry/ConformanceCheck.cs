@@ -134,7 +134,7 @@ public sealed partial class ConformanceCheck : Node
     string? FindCorpusDir()
     {
         if (Directory.Exists(CorpusDir)) return CorpusDir;
-        var env = Environment.GetEnvironmentVariable("OGSA_TS_CONFORMANCE");
+        var env = System.Environment.GetEnvironmentVariable("OGSA_TS_CONFORMANCE");
         if (!string.IsNullOrEmpty(env) && Directory.Exists(env)) return env;
 
         string? dir = ProjectSettings.GlobalizePath("res://");
