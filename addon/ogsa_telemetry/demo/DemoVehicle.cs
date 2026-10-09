@@ -30,8 +30,10 @@ public sealed partial class DemoVehicle : Node3D
 
         _telemetry.BindChannelRaw(_rpm, () =>
             MaxRpm * (0.5 + 0.5 * Mathf.Sin((float)_t * 2f)));
-        _telemetry.BindChannel(_speed, () => AngularSpeed * Radius,
-            Ogsa.Telemetry.Unit.MetrePerSecond);
+        // game-native units — the publisher converts on the wire: speed is
+        // measured in km/h here (ω·r in m/s × 3.6), declared m/s.
+        _telemetry.BindChannel(_speed, () => AngularSpeed * Radius * 3.6,
+            Ogsa.Telemetry.Unit.KilometrePerHour);
         _telemetry.BindBooleanChannel(_headlights, () => true);
 
         // pose via manual binding (no physics body needed in the demo);

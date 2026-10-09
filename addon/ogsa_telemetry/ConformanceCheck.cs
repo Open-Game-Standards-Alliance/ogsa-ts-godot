@@ -110,27 +110,109 @@ public sealed partial class ConformanceCheck : Node
             var ok = type switch
             {
                 Ogsa.Telemetry.FrameType.Discovery =>
-                    CheckDiscovery(CapnpGen.DiscoveryFrame.READER.create(root)),
+                    CheckDiscovery(id, CapnpGen.DiscoveryFrame.READER.create(root)),
                 Ogsa.Telemetry.FrameType.Motion =>
-                    CheckMotion(CapnpGen.MotionFrame.READER.create(root)),
+                    CheckMotion(id, CapnpGen.MotionFrame.READER.create(root)),
                 Ogsa.Telemetry.FrameType.Event =>
-                    CheckEvent(CapnpGen.EventFrame.READER.create(root)),
+                    CheckEvent(id, CapnpGen.EventFrame.READER.create(root)),
                 _ => false,
             };
             Check($"corpus: {id} decode", ok);
         }
     }
 
-    static bool CheckDiscovery(CapnpGen.DiscoveryFrame.READER d) =>
-        d.SchemaVersion == 1
-        && d.GameName == "conformance"
-        && d.Objects.Count == 1;
+    // Per-vector semantics mirroring ogsa-ts-dotnet's ConformanceVectorTests
+    // (manifest-declared values; floats are float32-exact, so == is exact).
 
-    static bool CheckMotion(CapnpGen.MotionFrame.READER m) =>
-        m.Timestamp > 0 && m.Objects.Count is 1 or 2
-        && m.Objects[0].Name != null;
+    static bool CheckDiscovery(string id, CapnpGen.DiscoveryFrame.READER d) => id switch
+    {
+        "discovery-minimal" =>
+            d.SchemaVersion == 1
+            && d.GameName == "conformance"
+            && d.SessionStartUnixUs == 1_730_000_000_000_000L
+            && d.Objects.Count == 1
+            && d.Objects[0].Name == "obj"
+            && d.Objects[0].Type == CapnpGen.ObjectType.vehicle
+            && d.Objects[0].Primary
+            && d.Objects[0].Channels.Count == 0,
+        "discovery-channels" =>
+            d.SchemaVersion == 1
+            && d.GameName == "conformance"
+            && d.Objects.Count == 1
+            && d.Objects[0].Name == "demo_car"
+            && d.Objects[0].TypeLabel == "conformance car"
+            && d.Objects[0].Channels.Count == 3
+            && d.Objects[0].Channels[0].Id == 0
+            && d.Objects[0].Channels[0].Name == "engine.rpm"
+            && d.Objects[0].Channels[0].Unit == "rpm"
+            && d.Objects[0].Channels[0].Range.Min == 0f
+            && d.Objects[0].Channels[0].Range.Max == 9000f
+            && d.Objects[0].Channels[1].Id == 1
+            && d.Objects[0].Channels[1].Name == "vehicle.speed"
+            && d.Objects[0].Channels[1].Unit == "m/s"
+            && d.Objects[0].Channels[1].Range.Min == 0f
+            && d.Objects[0].Channels[1].Range.Max == 30f
+            && d.Objects[0].Channels[2].Id == 2
+            && d.Objects[0].Channels[2].Name == "lights.headlights"
+            && d.Objects[0].Channels[2].Unit == "",
+        _ => false,
+    };
 
-    static bool CheckEvent(CapnpGen.EventFrame.READER e) =>
-        e.Events.Count == 1 && e.Events[0].Name == "body.impact"
-        && System.Math.Abs(e.Events[0].Intensity - 0.75f) < 1e-6;
+    static bool CheckMotion(string id, CapnpGen.MotionFrame.READER m) => id switch
+    {
+        "motion-pose" =>
+            m.Timestamp == 1.25
+            && m.Objects.Count == 1
+            && m.Objects[0].Name == "obj"
+            && m.Objects[0].Position.X == 1.5f
+            && m.Objects[0].Position.Y == 0.25f
+            && m.Objects[0].Position.Z == -3.75f
+            && m.Objects[0].Orientation.X == 0f
+            && m.Objects[0].Orientation.Y == 0f
+            && m.Objects[0].Orientation.Z == 0f
+            && m.Objects[0].Orientation.W == 1f,
+        "motion-channels" =>
+            m.Timestamp == 2.5
+            && m.Objects.Count == 1
+            && m.Objects[0].Name == "demo_car"
+            && m.Objects[0].Position.X == -2f
+            && m.Objects[0].Position.Y == 0.5f
+            && m.Objects[0].Position.Z == 3f
+            && m.Objects[0].Orientation.Y == 1f
+            && m.Objects[0].Channels.Count == 3
+            && m.Objects[0].Channels[0].Id == 0
+            && m.Objects[0].Channels[0].which == CapnpGen.ChannelValue.WHICH.Number
+            && m.Objects[0].Channels[0].Number == 3250.5f
+            && m.Objects[0].Channels[1].Id == 1
+            && m.Objects[0].Channels[1].Number == 8f
+            && m.Objects[0].Channels[2].Id == 2
+            && m.Objects[0].Channels[2].which == CapnpGen.ChannelValue.WHICH.Boolean
+            && m.Objects[0].Channels[2].Boolean,
+        "motion-multi" =>
+            m.Timestamp == 3.75
+            && m.Objects.Count == 2
+            && m.Objects[0].Name == "player_car"
+            && m.Objects[0].Position.X == 1f
+            && m.Objects[1].Name == "wingman"
+            && m.Objects[1].Position.X == -1f
+            && m.Objects[1].Position.Y == 0.5f
+            && m.Objects[1].Position.Z == 2.5f,
+        _ => false,
+    };
+
+    static bool CheckEvent(string id, CapnpGen.EventFrame.READER e) => id switch
+    {
+        "event-impact" =>
+            e.Timestamp == 0.125
+            && e.Events.Count == 1
+            && e.Events[0].Id == 7
+            && e.Events[0].Name == "body.impact"
+            && e.Events[0].Intensity == 0.75f
+            && e.Events[0].Duration == 0.25f
+            && e.Events[0].which == CapnpGen.Event.WHICH.Direction
+            && e.Events[0].Direction.X == -1f
+            && e.Events[0].Direction.Y == 0f
+            && e.Events[0].Direction.Z == 0f,
+        _ => false,
+    };
 }
