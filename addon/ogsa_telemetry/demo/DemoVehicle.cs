@@ -8,9 +8,9 @@ namespace Ogsa.Telemetry.Godot.Demo;
 public sealed partial class DemoVehicle : Node3D
 {
     TelemetryPublisherNode? _telemetry;
-    Ogsa.Telemetry.ChannelHandle _rpm;
-    Ogsa.Telemetry.ChannelHandle _speed;
-    Ogsa.Telemetry.ChannelHandle _headlights;
+    Ogsa.Telemetry.ChannelHandle? _rpm;
+    Ogsa.Telemetry.ChannelHandle? _speed;
+    Ogsa.Telemetry.ChannelHandle? _headlights;
 
     double _t;
     const float Radius = 10f;
