@@ -1,0 +1,3 @@
+# Godot generates these; the addon source is synced in by sync-addon.ps1
+.godot/
+addons/
