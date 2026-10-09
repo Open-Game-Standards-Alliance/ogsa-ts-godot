@@ -34,6 +34,6 @@ $dst = Join-Path $Project 'addons\ogsa_telemetry'
 # .meta files) — preserve them so references stay stable and no reimport churn
 robocopy $src $dst /MIR /NJH /NDL /NP /XF *.uid
 if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
-$LASTEXITCODE = 0
 Write-Host "synced -> $dst"
 Write-Host "note: .godot/ caches may reimport on next editor launch (normal)."
+exit 0
