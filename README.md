@@ -5,6 +5,8 @@ Godot 4 (.NET) addon for the [OGSA Telemetry Standard (OGSA-TS)](../OGSA-Telemet
 platforms, haptic hardware, dashboards, and loggers on the player's local
 network, over UDP multicast. Nothing leaves the LAN.
 
+Community & support: [Discord](https://discord.gg/tseF4Q6U99)
+
 Status: **bootstrap, validated** — conformance 12/12 and end-to-end in Godot 4.7.2 .NET (channels=3 ratified units, circle on-wire, |q|=1). `TelemetryPublisherNode`, vendored `Ogsa.Telemetry`
 core (the same source tested in ogsa-ts-dotnet), demo scene, and a
 conformance checker against the standard's golden corpus. Validated
