@@ -24,4 +24,4 @@ for f in "$SRC"/Schema/*.cs; do
 done
 # guard against Unity-style meta leftovers (Godot uses none)
 find "$DST" -name "*.meta" -delete
-[ "$changed" -eq 0 ] && echo "core up to date"
+if [ "$changed" -eq 0 ]; then echo "core up to date"; fi
